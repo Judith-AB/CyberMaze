@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Kontra Test</title>
+</head>
+
+<body>
+    <script src="https://unpkg.com/kontra/kontra.min.js"></script>
+    <script>
+        kontra.init({ width: 640, height: 480 });
+        let player = kontra.Sprite({ x: 50, y: 50, width: 32, height: 32, color: 'red' });
+        let loop = kontra.GameLoop({
+            update: function () { player.update(); },
+            render: function () {
+                kontra.context.fillStyle = '#111';
+                kontra.context.fillRect(0, 0, 640, 480);
+                player.render();
+            }
+        });
+        loop.start();
+    </script>
+</body>
+
+</html>
