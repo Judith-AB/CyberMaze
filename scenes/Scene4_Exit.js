@@ -1,12 +1,28 @@
 export default class Scene4_Exit extends Phaser.Scene {
-    constructor() { super({ key: 'Scene4_Exit' }); }
+    constructor() {
+        super({ key: 'Scene4_Exit' });
+    }
+
+    // 1. Preload the audio file
+    preload() {
+        this.load.audio('complete', 'assets/audio/complete.wav');
+    }
 
     create() {
+        // Stop any existing background music
+        let bg = this.sound.get('bgmusic');
+        if (bg) {
+            bg.stop();
+        }
+
+        // 2. Play the sound once
+        this.sound.play('complete');
+
+        // --- Rest of your existing code ---
         this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x03040a, 1);
         this.add.text(this.scale.width / 2, 120, "Cyber Victory!", { font: '36px monospace', fill: '#00ffcc' }).setOrigin(0.5);
         this.add.text(this.scale.width / 2, 180, "You escaped the Cyber Maze with your data intact.", { font: '20px monospace', fill: '#e6f7ff' }).setOrigin(0.5);
 
-        // Show achievements from tasksCompleted if needed
         const notes = [
             "Phishing Buster - avoided phishing emails",
             "Password Guardian - picked strong passwords",
