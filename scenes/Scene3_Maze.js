@@ -7,27 +7,31 @@ export default class Scene3_Maze extends Phaser.Scene {
         this.load.image('guyhead', 'assets/guyhead.png');
         this.load.image('girlhead', 'assets/girlhead.png');
 
-        // ===== 1. ADD THIS TO PRELOAD YOUR SOUNDS =====
-        // Make sure your sound files are in 'assets/audio/' or update the path.
         this.load.audio('correct', 'assets/audio/correct.wav');
         this.load.audio('wrong', 'assets/audio/wrong.wav');
     }
 
     create() {
-        const cellSize = 48;
+        this.cellSize = 48; // Made cellSize a scene property
         this.taskActive = false;
         this.tasksCompleted = new Set();
+        // This automatically counts all tasks in your data file
         this.totalTasks = Object.keys(tasksData).length;
 
-        // Maze layout (adjusted to fit 768x576)
+        // ===== 1. REVISED MAZE WITH ALL 9 OBSTACLES =====
+        // Added the missing 'I' obstacle (formerly 'W')
         this.maze = [
-            "WWWWWWWWWWWWWWWW",
-            "W..P......F....W",
-            "W.W.W.WW.W.W.W.W",
-            "W..S..D......W.W",
-            "W.WWWWWW.W.W.W.W",
-            "W.....C......E.W",
-            "WWWWWWWWWWWWWWWW"
+            "WWWWWWWWWWWWWWWWWWWW",
+            "W..........W...H...W",
+            "W.WWWWWWWWWW.W.WWWWW",
+            "W.S.....P....W...B.W",
+            "W.WWWWW.WWWWWWWW.W.W",
+            "W.T.....F....C...W.W",
+            "W.WWWWW.WWWWWWWW.W.W",
+            "W.D.......W...I..W.W", // <- Missing obstacle added here
+            "W.WWWWWWWWWWWWWW.W.W",
+            "W................E.W",
+            "WWWWWWWWWWWWWWWWWWWW"
         ];
 
         this.walls = this.add.group();
@@ -39,21 +43,23 @@ export default class Scene3_Maze extends Phaser.Scene {
 
         for (let row = 0; row < this.maze.length; row++) {
             for (let col = 0; col < this.maze[row].length; col++) {
-                const x = col * cellSize + cellSize / 2 + 16;
-                const y = row * cellSize + cellSize / 2 + 16;
+                // Adjusted x/y to center the larger maze
+                const x = col * this.cellSize + this.cellSize / 2;
+                const y = row * this.cellSize + this.cellSize / 2;
                 const cell = this.maze[row][col];
 
                 if (cell === 'W') {
-                    const wall = this.add.rectangle(x, y, cellSize, cellSize, wallFill).setStrokeStyle(2, wallStroke, 1);
+                    const wall = this.add.rectangle(x, y, this.cellSize, this.cellSize, wallFill).setStrokeStyle(2, wallStroke, 1);
                     this.physics.add.existing(wall, true);
                     this.walls.add(wall);
-                } else if ("PSFDC".includes(cell)) {
-                    const obs = this.add.rectangle(x, y, cellSize - 4, cellSize - 4, 0xdfb07b).setStrokeStyle(2, 0xffffff, 0.5);
+                // ===== 2. UPDATED TO RECOGNIZE ALL TASK TYPES (I instead of W) =====
+                } else if ("PSFDCBHTI".includes(cell)) {
+                    const obs = this.add.rectangle(x, y, this.cellSize - 4, this.cellSize - 4, 0xdfb07b).setStrokeStyle(2, 0xffffff, 0.5);
                     this.physics.add.existing(obs, true);
                     obs.taskType = cell;
                     this.obstacles.add(obs);
                 } else if (cell === 'E') {
-                    this.exit = this.add.rectangle(x, y, cellSize - 4, cellSize - 4, 0x00ff88).setStrokeStyle(2, 0xffffff, 0.8);
+                    this.exit = this.add.rectangle(x, y, this.cellSize - 4, this.cellSize - 4, 0x00ff88).setStrokeStyle(2, 0xffffff, 0.8);
                     this.physics.add.existing(this.exit, true);
                 }
             }
@@ -67,7 +73,8 @@ export default class Scene3_Maze extends Phaser.Scene {
 
         const chosenAvatar = this.registry.get('avatar');
         const playerImageKey = (chosenAvatar === 'girl') ? 'girlhead' : 'guyhead';
-        this.player = this.add.image(48 + 16, 48 + 16, playerImageKey);
+        // Player starts at (1,1) which is now an empty space '.'
+        this.player = this.add.image(this.cellSize * 1.5, this.cellSize * 1.5, playerImageKey);
         this.player.setDisplaySize(32, 32);
         this.physics.add.existing(this.player);
         this.player.body.setCollideWorldBounds(true);
@@ -83,7 +90,7 @@ export default class Scene3_Maze extends Phaser.Scene {
                     this.scene.start('Scene4_Exit');
                 } else {
                     if (!this.warningText) {
-                        this.warningText = this.add.text(this.scale.width / 2, 8, "You must clear all chambers first!", { font: '18px monospace', fill: '#ff6677' }).setOrigin(0.5);
+                        this.warningText = this.add.text(this.scale.width / 2, 24, "You must clear all chambers first!", { font: '18px monospace', fill: '#ff6677' }).setOrigin(0.5);
                         this.time.delayedCall(1500, () => { this.warningText.destroy(); this.warningText = null; });
                     }
                 }
@@ -143,34 +150,30 @@ export default class Scene3_Maze extends Phaser.Scene {
         const container = this.add.container(0, 0);
         container.add(overlayBg);
 
-        const narration = this.add.text(this.scale.width / 2, 70, task.narration, { font: '18px monospace', fill: '#e6f7ff', wordWrap: { width: this.scale.width - 120 } }).setOrigin(0.5);
+        const narration = this.add.text(this.scale.width / 2, 100, task.narration, { font: '18px monospace', fill: '#e6f7ff', align: 'center', wordWrap: { width: this.scale.width - 120 } }).setOrigin(0.5);
         container.add(narration);
 
-        const title = this.add.text(this.scale.width / 2, 120, task.title, { font: '22px monospace', fill: '#00ffc9' }).setOrigin(0.5);
+        const title = this.add.text(this.scale.width / 2, 40, task.title, { font: '24px monospace', fill: '#00ffc9', fontStyle: 'bold' }).setOrigin(0.5);
         container.add(title);
 
         const buttons = [];
-        const texts = [];
         const baseY = 210;
         const spacing = 70;
         const btnW = Math.min(640, this.scale.width - 160);
-
         const correctIndex = task.correct;
 
         task.options.forEach((opt, i) => {
             const y = baseY + i * spacing;
             const btn = this.add.rectangle(this.scale.width / 2, y, btnW, 56, 0xaaaaaa).setInteractive({ useHandCursor: true });
-            const txt = this.add.text(this.scale.width / 2, y, opt, { font: '16px monospace', fill: '#000' }).setOrigin(0.5);
+            const txt = this.add.text(this.scale.width / 2, y, opt, { font: '16px monospace', fill: '#000', align: 'center', wordWrap: { width: btnW - 20 } }).setOrigin(0.5);
             container.add(btn); container.add(txt);
-            buttons.push(btn); texts.push(txt);
+            buttons.push(btn);
 
             btn.on('pointerdown', () => {
                 if (i === correctIndex) {
-                    // ===== 2. PLAY CORRECT SOUND =====
                     this.sound.play('correct');
-
                     btn.fillColor = 0x00ff00;
-                    buttons.forEach((b, idx) => { if (idx !== i) b.fillColor = 0xff0000; });
+                    buttons.forEach(b => b.removeInteractive()); // Disable all buttons
                     this.time.delayedCall(900, () => {
                         this.tasksCompleted.add(type);
                         obstacle.destroy();
@@ -178,14 +181,13 @@ export default class Scene3_Maze extends Phaser.Scene {
                         this.taskActive = false;
                     });
                 } else {
-                    // ===== 3. PLAY WRONG SOUND =====
                     this.sound.play('wrong');
-
                     btn.fillColor = 0xff0000;
                     if (buttons[correctIndex]) buttons[correctIndex].fillColor = 0x00ff00;
-                    this.time.delayedCall(900, () => {
-                        this.player.x = 48 + 16;
-                        this.player.y = 48 + 16;
+                    buttons.forEach(b => b.removeInteractive()); // Disable all buttons
+                    this.time.delayedCall(1200, () => {
+                        // ===== FIX: Replaced body.reset() with the more stable setPosition() =====
+                        this.player.setPosition(this.cellSize * 1.5, this.cellSize * 1.5);
                         container.destroy();
                         this.taskActive = false;
                     });
@@ -193,7 +195,16 @@ export default class Scene3_Maze extends Phaser.Scene {
             });
         });
 
-        const hint = this.add.text(this.scale.width / 2, this.scale.height - 50, "Complete the chamber to proceed", { font: '16px monospace', fill: '#bcdfff' }).setOrigin(0.5);
+        // ===== 3. ADDED THE DYNAMIC HINT FROM TASKS DATA =====
+        const hintText = `Hint: ${task.hint}`;
+        const hint = this.add.text(this.scale.width / 2, this.scale.height - 50, hintText, {
+            font: '16px monospace',
+            fill: '#ffff88', // Bright yellow for attention
+            fontStyle: 'italic',
+            align: 'center',
+            wordWrap: { width: this.scale.width - 100 }
+        }).setOrigin(0.5);
         container.add(hint);
     }
 }
+

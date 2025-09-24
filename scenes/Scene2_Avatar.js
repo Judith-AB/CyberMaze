@@ -10,10 +10,16 @@ export default class Scene2_Avatar extends Phaser.Scene {
     }
 
     create() {
-        const titleText = this.add.text(this.scale.width / 2, 48, "Choose Your Cyber Hero", { font: '28px monospace', fill: '#00ffcc' }).setOrigin(0.5);
+        const titleText = this.add.text(this.scale.width / 2, 80, "Choose Your Cyber Hero", { font: '32px monospace', fill: '#00ffcc' }).setOrigin(0.5);
 
-        const boyCard = this.createAvatarCard(240, 260, 'avatar_guy', 'Cyber Boy');
-        const girlCard = this.createAvatarCard(528, 260, 'avatar_girl', 'Cyber Girl');
+        // ===== FIX: Calculate positions dynamically to center the cards =====
+        const centerX = this.scale.width / 2;
+        const cardSpacing = 280; // The distance between the centers of the two cards
+        const cardY = this.scale.height / 2 + 20;
+
+        const boyCard = this.createAvatarCard(centerX - cardSpacing / 2, cardY, 'avatar_guy', 'Cyber Boy');
+        const girlCard = this.createAvatarCard(centerX + cardSpacing / 2, cardY, 'avatar_girl', 'Cyber Girl');
+        // ====================================================================
         
         const UIGroup = [titleText, boyCard, girlCard];
 
